@@ -454,15 +454,15 @@ Jalur fisik (underlay) yang dilalui tunnel adalah R-PUSAT, R-UTARA, lalu R-PELAB
 
 Sebelum tunnel dibuat, konektivitas soal 1 sampai 5 diuji terlebih dahulu. PC CCTV Kota dapat melakukan ping ke PC WiFi Barat dan ke server 8.8.8.8, dan PC Kantor Pelabuhan dapat melakukan ping ke PC CCTV Kota (alamat DHCP 10.64.64.10).
 
-> Catatan: paket pertama pada ping dapat hilang (loss 25%) karena proses ARP. Pengujian kedua menunjukkan 0% loss.
-
 **Screenshot:** PC CCTV Kota, Desktop, Command Prompt, `ping 10.64.96.2` dan `ping 8.8.8.8`.
 
-![Ping PC CCTV ke WiFi Barat dan internet](Assets/soal6_01_ping_awal_cctv.png)
+<img width="414" height="177" alt="image" src="https://github.com/user-attachments/assets/958e745a-32a1-4512-8591-c2a58f580032" />
+<img width="412" height="186" alt="image" src="https://github.com/user-attachments/assets/64540849-c597-46e9-b13f-bf2600c1ff17" />
 
 **Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, `ping 10.64.64.10`.
 
-![Ping PC Pelabuhan ke PC CCTV](Assets/soal6_02_ping_awal_pelabuhan.png)
+<img width="418" height="191" alt="image" src="https://github.com/user-attachments/assets/ece58cec-08d7-426c-bcbb-b16ef3b5d0b0" />
+
 
 ### 6.3. Rute ke Ujung Tunnel (R-PUSAT)
 
@@ -480,7 +480,8 @@ Rute ini harus tetap ada. Jika dihapus, ujung tunnel tidak terjangkau dan tunnel
 
 **Screenshot:** R-PUSAT, tab CLI, hasil `ping 10.64.241.54`.
 
-![Ping dari R-PUSAT ke ujung tunnel](Assets/soal6_03_ping_ujung_tunnel.png)
+<img width="516" height="123" alt="image" src="https://github.com/user-attachments/assets/6c4dfc23-43ec-45bd-ac1b-931360e762b1" />
+
 
 ### 6.4. Konfigurasi Tunnel di R-PUSAT
 
@@ -526,15 +527,16 @@ Tunnel0 berstatus up/up. Pada `show interfaces tunnel0` terlihat IP tunnel, tunn
 
 **Screenshot:** R-PUSAT, tab CLI, hasil `show ip interface brief` (baris Tunnel0 up/up).
 
-![show ip interface brief R-PUSAT](Assets/soal6_04_tunnel_up_pusat.png)
+<img width="611" height="185" alt="image" src="https://github.com/user-attachments/assets/1b3c7a1f-0926-47f4-871e-5c61717638ec" />
+
 
 **Screenshot:** R-PELABUHAN, tab CLI, hasil `show ip interface brief` (baris Tunnel0 up/up).
+<img width="656" height="171" alt="image" src="https://github.com/user-attachments/assets/cad5347d-b85f-4949-a089-7fda55977692" />
 
-![show ip interface brief R-PELABUHAN](Assets/soal6_05_tunnel_up_pelabuhan.png)
 
 **Screenshot:** R-PUSAT, tab CLI, hasil `show interfaces tunnel0`.
+<img width="523" height="319" alt="image" src="https://github.com/user-attachments/assets/42f45d5f-11e9-49c8-9b84-a4b499edf201" />
 
-![show interfaces tunnel0 R-PUSAT](Assets/soal6_06_show_tunnel_pusat.png)
 
 Uji koneksi antar ujung tunnel:
 
@@ -547,11 +549,13 @@ ping 192.168.8.1
 
 **Screenshot:** R-PUSAT, tab CLI, hasil `ping 192.168.8.2`.
 
-![Ping tunnel dari R-PUSAT](Assets/soal6_07a_ping_tunnel_pusat.png)
+<img width="517" height="114" alt="image" src="https://github.com/user-attachments/assets/eb34f061-fdaa-4639-a25a-a8885af3ae87" />
+
 
 **Screenshot:** R-PELABUHAN, tab CLI, hasil `ping 192.168.8.1`.
 
-![Ping tunnel dari R-PELABUHAN](Assets/soal6_07b_ping_tunnel_pelabuhan.png)
+<img width="515" height="107" alt="image" src="https://github.com/user-attachments/assets/69b06101-21ce-4c37-be29-bd90235abab3" />
+
 
 ### 6.7. Routing Lalu Lintas Melalui Tunnel
 
@@ -590,11 +594,11 @@ Default route R-PELABUHAN ke R-UTARA (10.64.241.53) tidak diubah.
 
 **Screenshot:** R-PUSAT, tab CLI, hasil `show ip route` (rute S ke 10.64.128.0/19 dan 10.64.240.0/25 via 192.168.8.2).
 
-![Tabel routing R-PUSAT](Assets/soal6_08_route_pusat.png)
+<img width="585" height="329" alt="image" src="https://github.com/user-attachments/assets/0b7fe7d3-845d-4132-9097-4173672d8273" />
 
 **Screenshot:** R-PELABUHAN, tab CLI, hasil `show ip route` (rute S ke 10.64.224.0/21 dan 10.64.241.0/27 via 192.168.8.1).
 
-![Tabel routing R-PELABUHAN](Assets/soal6_09_route_pelabuhan.png)
+<img width="578" height="277" alt="image" src="https://github.com/user-attachments/assets/ebcdb8d2-9fe6-44cf-bae8-35b460d19692" />
 
 ### 6.8. Pengujian Lalu Lintas Melalui Tunnel
 
@@ -613,7 +617,8 @@ Hasil tracert:
 
 **Screenshot:** PC Pegawai Balai Kota, Desktop, Command Prompt, hasil `tracert 10.64.240.2`.
 
-![tracert Balai Kota ke Pelabuhan](Assets/soal6_10_tracert_balaikota_ke_pelabuhan.png)
+<img width="455" height="124" alt="image" src="https://github.com/user-attachments/assets/8c462f1b-a89e-40c7-b0a8-e0214bf72b6d" />
+
 
 Dari PC Kantor Pelabuhan menuju PC Pegawai Balai Kota:
 
@@ -629,7 +634,8 @@ Hasil tracert:
 
 **Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, hasil `tracert 10.64.224.2`.
 
-![tracert Pelabuhan ke Balai Kota](Assets/soal6_11_tracert_pelabuhan_ke_balaikota.png)
+<img width="416" height="143" alt="image" src="https://github.com/user-attachments/assets/c7772961-d2b1-4568-b55d-b5c04fd16a6d" />
+
 
 Pada kedua arah tidak muncul hop 10.64.241.38 maupun 10.64.241.53 (R-UTARA) sebagai hop terpisah, sehingga terbukti lalu lintas melewati tunnel.
 
@@ -639,9 +645,10 @@ Pengujian akses internet setelah tunnel aktif (dari PC Kantor Pelabuhan):
 ping 8.8.8.8
 ```
 
-**Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, hasil `ping 8.8.8.8` (ulang sampai 0% loss).
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, hasil `ping 8.8.8.8` 
 
-![Ping internet setelah tunnel](Assets/soal6_12_ping_internet.png)
+<img width="451" height="200" alt="image" src="https://github.com/user-attachments/assets/3e78866f-a417-4adb-aac4-7b0f0af0ffb6" />
+
 
 ### 6.9. Penjelasan
 
