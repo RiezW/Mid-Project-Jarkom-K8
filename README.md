@@ -435,4 +435,218 @@ NAT/PAT dikonfigurasi pada R-PUSAT untuk menerjemahkan alamat IP privat jaringan
 Tabel translasi NAT menunjukkan penggunaan alamat publik `203.0.113.33` untuk sejumlah koneksi internal. Selain itu, tabel routing R-ISP yang diperiksa tidak menampilkan rute khusus menuju jaringan privat `10.64.0.0/16`.
 
 Hasil tersebut menunjukkan bahwa mekanisme NAT/PAT telah berjalan untuk beberapa koneksi internal. Pengujian lanjutan diperlukan untuk memastikan translasi pada PC CCTV-KOTA dan memastikan seluruh host internal dapat mengakses server internet sesuai ketentuan soal.
+## 6. Soal 6: Tunnel GRE
 
+### 6.1. Tujuan dan Parameter
+
+Tunnel GRE dibangun antara R-PUSAT dan R-PELABUHAN agar lalu lintas antara subnet Balai Kota dan subnet Pelabuhan melewati tunnel.
+
+| Parameter | R-PUSAT | R-PELABUHAN |
+|---|---|---|
+| Jaringan tunnel | 192.168.8.0/30 | 192.168.8.0/30 |
+| IP Tunnel0 | 192.168.8.1 | 192.168.8.2 |
+| Tunnel source | Serial0/3/1 (10.64.241.37, link L2) | Serial0/3/0 (10.64.241.54, link L6) |
+| Tunnel destination | 10.64.241.54 | 10.64.241.37 |
+
+Jalur fisik (underlay) yang dilalui tunnel adalah R-PUSAT, R-UTARA, lalu R-PELABUHAN, melalui link L2 dan L6.
+
+### 6.2. Pengujian Awal Sebelum Tunnel
+
+Sebelum tunnel dibuat, konektivitas soal 1 sampai 5 diuji terlebih dahulu. PC CCTV Kota dapat melakukan ping ke PC WiFi Barat dan ke server 8.8.8.8, dan PC Kantor Pelabuhan dapat melakukan ping ke PC CCTV Kota (alamat DHCP 10.64.64.10).
+
+> Catatan: paket pertama pada ping dapat hilang (loss 25%) karena proses ARP. Pengujian kedua menunjukkan 0% loss.
+
+**Screenshot:** PC CCTV Kota, Desktop, Command Prompt, `ping 10.64.96.2` dan `ping 8.8.8.8`.
+
+![Ping PC CCTV ke WiFi Barat dan internet](Assets/soal6_01_ping_awal_cctv.png)
+
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, `ping 10.64.64.10`.
+
+![Ping PC Pelabuhan ke PC CCTV](Assets/soal6_02_ping_awal_pelabuhan.png)
+
+### 6.3. Rute ke Ujung Tunnel (R-PUSAT)
+
+Agar R-PUSAT dapat menjangkau ujung tunnel di R-PELABUHAN (10.64.241.54), ditambahkan rute ke link L6 melalui R-UTARA.
+
+```
+enable
+configure terminal
+ip route 10.64.241.52 255.255.255.252 10.64.241.38
+end
+ping 10.64.241.54
+```
+
+Rute ini harus tetap ada. Jika dihapus, ujung tunnel tidak terjangkau dan tunnel akan down.
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `ping 10.64.241.54`.
+
+![Ping dari R-PUSAT ke ujung tunnel](Assets/soal6_03_ping_ujung_tunnel.png)
+
+### 6.4. Konfigurasi Tunnel di R-PUSAT
+
+```
+configure terminal
+interface Tunnel0
+ ip address 192.168.8.1 255.255.255.252
+ tunnel source serial0/3/1
+ tunnel destination 10.64.241.54
+ no shutdown
+end
+write memory
+```
+
+Pada versi Packet Tracer yang digunakan, perintah `tunnel source` tidak menerima alamat IP, sehingga ditulis dengan nama interface (Serial0/3/1) yang memiliki IP 10.64.241.37.
+
+### 6.5. Konfigurasi Tunnel di R-PELABUHAN
+
+Source dan destination dibalik dari R-PUSAT.
+
+```
+enable
+configure terminal
+interface Tunnel0
+ ip address 192.168.8.2 255.255.255.252
+ tunnel source serial0/3/0
+ tunnel destination 10.64.241.37
+ no shutdown
+end
+write memory
+```
+
+### 6.6. Verifikasi Tunnel
+
+Perintah di R-PUSAT dan R-PELABUHAN:
+
+```
+show ip interface brief
+show interfaces tunnel0
+```
+
+Tunnel0 berstatus up/up. Pada `show interfaces tunnel0` terlihat IP tunnel, tunnel source, dan tunnel destination sesuai tabel pada bagian 6.1.
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show ip interface brief` (baris Tunnel0 up/up).
+
+![show ip interface brief R-PUSAT](Assets/soal6_04_tunnel_up_pusat.png)
+
+**Screenshot:** R-PELABUHAN, tab CLI, hasil `show ip interface brief` (baris Tunnel0 up/up).
+
+![show ip interface brief R-PELABUHAN](Assets/soal6_05_tunnel_up_pelabuhan.png)
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show interfaces tunnel0`.
+
+![show interfaces tunnel0 R-PUSAT](Assets/soal6_06_show_tunnel_pusat.png)
+
+Uji koneksi antar ujung tunnel:
+
+```
+! di R-PUSAT
+ping 192.168.8.2
+! di R-PELABUHAN
+ping 192.168.8.1
+```
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `ping 192.168.8.2`.
+
+![Ping tunnel dari R-PUSAT](Assets/soal6_07a_ping_tunnel_pusat.png)
+
+**Screenshot:** R-PELABUHAN, tab CLI, hasil `ping 192.168.8.1`.
+
+![Ping tunnel dari R-PELABUHAN](Assets/soal6_07b_ping_tunnel_pelabuhan.png)
+
+### 6.7. Routing Lalu Lintas Melalui Tunnel
+
+**R-PUSAT:** next-hop lama (R-UTARA, 10.64.241.38) untuk dua LAN Pelabuhan dihapus, lalu diganti ujung tunnel (192.168.8.2).
+
+```
+configure terminal
+no ip route 10.64.128.0 255.255.224.0 10.64.241.38
+no ip route 10.64.240.0 255.255.255.128 10.64.241.38
+ip route 10.64.128.0 255.255.224.0 192.168.8.2
+ip route 10.64.240.0 255.255.255.128 192.168.8.2
+end
+write memory
+```
+
+**R-PELABUHAN:** ditambahkan rute balik ke dua LAN Balai Kota melalui tunnel.
+
+```
+configure terminal
+ip route 10.64.224.0 255.255.248.0 192.168.8.1
+ip route 10.64.241.0 255.255.255.224 192.168.8.1
+end
+write memory
+```
+
+Default route R-PELABUHAN ke R-UTARA (10.64.241.53) tidak diubah.
+
+| Router | Tujuan | Next-hop | Keterangan |
+|---|---|---|---|
+| R-PUSAT | 10.64.128.0/19 (Sensor dan SCADA Pelabuhan) | 192.168.8.2 | lewat tunnel |
+| R-PUSAT | 10.64.240.0/25 (Kantor Pelabuhan) | 192.168.8.2 | lewat tunnel |
+| R-PUSAT | 10.64.241.52/30 (link L6) | 10.64.241.38 | agar ujung tunnel terjangkau |
+| R-PELABUHAN | 10.64.224.0/21 (Pegawai Balai Kota) | 192.168.8.1 | lewat tunnel |
+| R-PELABUHAN | 10.64.241.0/27 (Server Balai Kota) | 192.168.8.1 | lewat tunnel |
+| R-PELABUHAN | 0.0.0.0/0 | 10.64.241.53 | tetap ke R-UTARA |
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show ip route` (rute S ke 10.64.128.0/19 dan 10.64.240.0/25 via 192.168.8.2).
+
+![Tabel routing R-PUSAT](Assets/soal6_08_route_pusat.png)
+
+**Screenshot:** R-PELABUHAN, tab CLI, hasil `show ip route` (rute S ke 10.64.224.0/21 dan 10.64.241.0/27 via 192.168.8.1).
+
+![Tabel routing R-PELABUHAN](Assets/soal6_09_route_pelabuhan.png)
+
+### 6.8. Pengujian Lalu Lintas Melalui Tunnel
+
+Dari PC Pegawai Balai Kota (10.64.224.2) menuju PC Kantor Pelabuhan (10.64.240.2):
+
+```
+ping 10.64.240.2
+tracert 10.64.240.2
+```
+
+Hasil tracert:
+
+1. 10.64.224.1 (gateway Balai Kota)
+2. 192.168.8.2 (ujung tunnel R-PELABUHAN)
+3. 10.64.240.2 (PC Kantor Pelabuhan)
+
+**Screenshot:** PC Pegawai Balai Kota, Desktop, Command Prompt, hasil `tracert 10.64.240.2`.
+
+![tracert Balai Kota ke Pelabuhan](Assets/soal6_10_tracert_balaikota_ke_pelabuhan.png)
+
+Dari PC Kantor Pelabuhan menuju PC Pegawai Balai Kota:
+
+```
+tracert 10.64.224.2
+```
+
+Hasil tracert:
+
+1. 10.64.240.1 (gateway Pelabuhan)
+2. 192.168.8.1 (ujung tunnel R-PUSAT)
+3. 10.64.224.2 (PC Pegawai Balai Kota)
+
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, hasil `tracert 10.64.224.2`.
+
+![tracert Pelabuhan ke Balai Kota](Assets/soal6_11_tracert_pelabuhan_ke_balaikota.png)
+
+Pada kedua arah tidak muncul hop 10.64.241.38 maupun 10.64.241.53 (R-UTARA) sebagai hop terpisah, sehingga terbukti lalu lintas melewati tunnel.
+
+Pengujian akses internet setelah tunnel aktif (dari PC Kantor Pelabuhan):
+
+```
+ping 8.8.8.8
+```
+
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Command Prompt, hasil `ping 8.8.8.8` (ulang sampai 0% loss).
+
+![Ping internet setelah tunnel](Assets/soal6_12_ping_internet.png)
+
+### 6.9. Penjelasan
+
+**Mengapa router memilih jalur tunnel dibandingkan jalur lain ke Pelabuhan.**
+Router memilih rute berdasarkan longest prefix match, lalu administrative distance bila prefix sama. Pada R-PUSAT, rute ke LAN Pelabuhan dikonfigurasi dengan next-hop 192.168.8.2, yaitu ujung tunnel, dan rute lama melalui R-UTARA dihapus. Karena satu-satunya rute ke LAN Pelabuhan mengarah ke Tunnel0, router mengirim paket melalui tunnel. Paket dibungkus dengan header IP baru (source 10.64.241.37, destination 10.64.241.54) dan diteruskan melalui jalur fisik R-UTARA. Karena itu, R-UTARA hanya meneruskan paket GRE antara dua ujung tunnel dan tidak muncul sebagai hop pada tracert. Pada R-PELABUHAN, rute ke LAN Balai Kota juga diarahkan ke 192.168.8.1 sehingga arah baliknya melewati tunnel yang sama.
+
+**Mengapa GRE saja tidak mengenkripsi data.**
+GRE (Generic Routing Encapsulation) hanya melakukan encapsulation, yaitu membungkus paket asli dengan header IP dan header GRE baru agar dapat dikirim melalui jaringan lain. Isi paket tetap dikirim sebagai plaintext. GRE tidak menyediakan kerahasiaan (data dapat dibaca oleh siapa pun yang menyadap link), autentikasi (penerima tidak memverifikasi pengirim), maupun integritas (isi paket dapat diubah tanpa terdeteksi). Untuk melindungi data di dalam tunnel diperlukan protokol tambahan seperti IPsec.
