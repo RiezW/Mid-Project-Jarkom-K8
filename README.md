@@ -144,9 +144,3 @@ Tunnel GRE dirancang untuk menghubungkan R-PUSAT dan R-PELABUHAN menggunakan jar
 Tunnel GRE membentuk jalur logis antara kedua router melalui jaringan underlay yang sudah tersedia. Routing harus dikonfigurasi agar lalu lintas antara subnet Balai Kota dan Pelabuhan melewati tunnel sesuai ketentuan proyek.
 
 GRE tidak menyediakan enkripsi secara bawaan. Jika diperlukan, enkripsi dapat ditambahkan menggunakan IPsec.
-
-## 4. Kesimpulan
-
-Desain jaringan Smart City Kota Surabaya menggunakan R-PUSAT sebagai pusat konektivitas, router terpisah untuk setiap wilayah, VLAN untuk memisahkan LAN, serta VLSM untuk mengalokasikan alamat IP sesuai kebutuhan host.
-
-Jaringan dilengkapi enam link WAN internal, koneksi ISP, jaringan server internet, dan rancangan tunnel GRE menuju Pelabuhan. Setiap LAN dan link memiliki Network ID, prefix, subnet mask, serta alamat gateway yang terdokumentasi untuk memudahkan konfigurasi dan pengelolaan jaringan.
