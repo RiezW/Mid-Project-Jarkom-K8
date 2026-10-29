@@ -148,13 +148,13 @@ GRE tidak menyediakan enkripsi secara bawaan. Jika diperlukan, enkripsi dapat di
 ##4.
 ###4.1
 
-# 4.2 Konfigurasi DHCP pada Jaringan Smart City
+### 4.2 Konfigurasi DHCP pada Jaringan Smart City
 
 DHCP (*Dynamic Host Configuration Protocol*) merupakan protokol yang digunakan untuk memberikan konfigurasi alamat IP secara otomatis kepada perangkat klien. Pada jaringan Smart City Kota Surabaya, DHCP server ditempatkan pada Server dan Storage Data Center (DC), sedangkan router R-DC berfungsi sebagai DHCP relay untuk meneruskan permintaan alamat IP dari jaringan CCTV Kota ke DHCP server.
 
 Konfigurasi ini bertujuan agar perangkat CCTV Kota memperoleh alamat IP, subnet mask, default gateway, dan DNS server secara otomatis tanpa perlu melakukan pengaturan IP secara manual.
 
-## 4.2.1 Konfigurasi DHCP Server
+#### 4.2.1 Konfigurasi DHCP Server
 
 DHCP server dikonfigurasi pada perangkat Server dan Storage DC dengan alamat IP `10.64.238.2/24`. Server menyediakan pool DHCP bernama `CCTV-KOTA` untuk perangkat klien pada jaringan CCTV Kota dengan network `10.64.64.0/19`.
 
@@ -179,13 +179,11 @@ Langkah-langkah konfigurasi DHCP server adalah sebagai berikut.
 
 Alamat awal `10.64.64.10` digunakan sebagai alamat IP pertama yang dapat diberikan kepada klien CCTV Kota. Dengan subnet mask `255.255.224.0`, jaringan tersebut menggunakan prefix `/19`.
 
-
-
-**[TEMPAT SCREENSHOT 4.2.1]**
+<img width="526" height="497" alt="Konfigurasi DHCP Server" src="https://github.com/user-attachments/assets/063c012d-36a4-4b1c-90fd-f06d63292606" />
 
 *Gambar 4.2.1 Konfigurasi pool DHCP CCTV-KOTA pada Server dan Storage DC.*
 
-## 4.2.2 Konfigurasi DHCP Relay pada R-DC
+#### 4.2.2 Konfigurasi DHCP Relay pada R-DC
 
 Jaringan CCTV Kota dan Server dan Storage DC berada pada subnet yang berbeda. Oleh karena itu, diperlukan DHCP relay agar permintaan alamat IP dari klien CCTV dapat diteruskan ke DHCP server.
 
@@ -221,11 +219,11 @@ Langkah-langkah konfigurasi DHCP relay adalah sebagai berikut.
 
 Perintah `ip helper-address 10.64.238.2` digunakan untuk meneruskan permintaan DHCP dari jaringan CCTV Kota menuju server DHCP yang berada di jaringan Server dan Storage DC.
 
-**[TEMPAT SCREENSHOT 4.2.2]**
+<img width="526" height="497" alt="Konfigurasi DHCP Relay R-DC" src="https://github.com/user-attachments/assets/f9829c69-569b-4818-9dce-e9174fe82bf1" />
 
 *Gambar 4.2.2 Konfigurasi subinterface dan DHCP relay pada router R-DC.*
 
-## 4.2.3 Pengujian DHCP pada PC CCTV-KOTA
+#### 4.2.3 Pengujian DHCP pada PC CCTV-KOTA
 
 Pengujian dilakukan untuk memastikan bahwa perangkat CCTV Kota dapat memperoleh konfigurasi IP secara otomatis dari DHCP server.
 
@@ -250,25 +248,23 @@ Berdasarkan screenshot hasil pengujian, PC CCTV-KOTA memperoleh konfigurasi beri
 
 Hasil tersebut menunjukkan bahwa PC CCTV-KOTA telah memperoleh konfigurasi IPv4 secara otomatis sesuai dengan parameter pool DHCP yang dirancang.
 
-**[TEMPAT SCREENSHOT 4.2.3]**
+<img width="526" height="497" alt="Bukti PC Mendapat IP DHCP" src="https://github.com/user-attachments/assets/e8a38b21-86a0-4a82-8a9e-bb1e4c6554ae" />
 
 *Gambar 4.2.3 Hasil penerimaan alamat IP otomatis pada PC CCTV-KOTA.*
 
-## 4.2.4 Kesimpulan Pengujian DHCP
+#### 4.2.4 Kesimpulan Pengujian DHCP
 
 Berdasarkan konfigurasi dan hasil pengujian, DHCP server pada Server dan Storage DC menyediakan alamat IP secara otomatis bagi perangkat CCTV Kota. Permintaan DHCP dari klien diteruskan melalui DHCP relay pada router R-DC karena server dan klien berada pada subnet yang berbeda.
 
 PC CCTV-KOTA berhasil memperoleh alamat IP `10.64.64.10`, subnet mask `255.255.224.0`, default gateway `10.64.64.1`, dan DNS server `8.8.8.8`. Dengan demikian, konfigurasi DHCP pada jaringan CCTV Kota telah sesuai dengan rancangan pengalamatan jaringan Smart City.
 
----
-
-# 4.3 Konfigurasi NAT/PAT untuk Akses Server Internet
+### 4.3 Konfigurasi NAT/PAT untuk Akses Server Internet
 
 NAT (*Network Address Translation*) merupakan mekanisme penerjemahan alamat IP yang memungkinkan perangkat dengan alamat IP privat mengakses jaringan luar menggunakan alamat IP publik. Pada jaringan Smart City Kota Surabaya, NAT dikonfigurasi pada router R-PUSAT menggunakan metode PAT (*Port Address Translation*) atau *overload*.
 
 Konfigurasi ini bertujuan agar perangkat pada jaringan internal dapat mengakses server internet `8.8.8.8` melalui satu alamat IP publik R-PUSAT, yaitu `203.0.113.33`. Sesuai ketentuan soal, router R-ISP tidak perlu memiliki rute khusus menuju jaringan privat Smart City.
 
-## 4.3.1 Penentuan Interface NAT
+#### 4.3.1 Penentuan Interface NAT
 
 Sebelum melakukan pengujian, interface NAT perlu diperiksa untuk memastikan pemisahan antara jaringan internal dan jaringan luar sudah benar.
 
@@ -311,11 +307,11 @@ Berdasarkan konfigurasi yang ditampilkan, pembagian interface NAT pada R-PUSAT a
 
 Pembagian tersebut digunakan untuk membedakan lalu lintas dari jaringan internal dengan lalu lintas yang menuju ISP. Alamat dan peran interface harus sesuai dengan koneksi aktual pada topologi.
 
-**[TEMPAT SCREENSHOT 4.3.1]**
+<img width="526" height="497" alt="Status Interface NAT R-PUSAT" src="https://github.com/user-attachments/assets/ae710178-2c80-452e-be48-4398c29618ed" />
 
 *Gambar 4.3.1 Hasil pemeriksaan statistik NAT pada router R-PUSAT.*
 
-## 4.3.2 Konfigurasi ACL dan PAT
+#### 4.3.2 Konfigurasi ACL dan PAT
 
 ACL (*Access Control List*) digunakan untuk menentukan alamat sumber yang dapat diterjemahkan oleh NAT. Pada rancangan ini, ACL nomor 1 mengizinkan jaringan internal `10.64.0.0/16`.
 
@@ -341,13 +337,13 @@ Langkah-langkah konfigurasi ACL dan PAT adalah sebagai berikut.
 6. Pastikan interface internal telah ditandai menggunakan `ip nat inside` dan interface yang terhubung ke ISP menggunakan `ip nat outside`.
 7. Pastikan R-PUSAT memiliki default route menuju R-ISP melalui alamat next hop `203.0.113.34`.
 
-Apabila konfigurasi sudah tersedia dan benar, tidak perlu memasukkan ulang perintah yang sama. Pemeriksaan konfigurasi dilakukan untuk memastikan NAT menggunakan interface yang sesuai dengan rancangan.
+Apabila konfigurasi sudah tersedia dan benar, tidak perlu memasukkan ulang perintah yang sama. Pemeriksaan konfigurasi dilakukan untuk memastikan NAT menggunakan interface yang sesuai dengan rancangan.\
 
-**[TEMPAT SCREENSHOT 4.3.2]**
+<img width="526" height="497" alt="Ping ke Server Publik Berhasil" src="https://github.com/user-attachments/assets/7c49c2cc-757c-4772-a3f7-a167932dad7d" />
 
 *Gambar 4.3.2 Konfigurasi ACL dan PAT pada router R-PUSAT.*
 
-## 4.3.3 Pengujian Akses ke Server Internet
+#### 4.3.3 Pengujian Akses ke Server Internet
 
 Pengujian dilakukan untuk mengetahui apakah perangkat dari jaringan internal dapat mencapai server internet `8.8.8.8`.
 
@@ -367,11 +363,11 @@ Langkah-langkah pengujian adalah sebagai berikut.
 
 Berdasarkan screenshot pengujian yang tersedia, PC CCTV-KOTA mengirimkan empat paket dan menerima tiga balasan, sedangkan satu paket mengalami *Request timed out*. Hasil ini menunjukkan bahwa konektivitas menuju server internet telah berhasil, tetapi masih terdapat kehilangan satu paket pada pengujian awal.
 
-**[TEMPAT SCREENSHOT 4.3.3]**
+
 
 *Gambar 4.3.3 Hasil pengujian ping dari PC CCTV-KOTA menuju server internet `8.8.8.8`.*
 
-## 4.3.4 Verifikasi Translasi NAT
+#### 4.3.4 Verifikasi Translasi NAT
 
 Verifikasi translasi dilakukan untuk memastikan alamat IP privat perangkat internal diterjemahkan menjadi alamat IP publik ketika mengakses server internet.
 
@@ -393,11 +389,11 @@ Berdasarkan screenshot yang tersedia, tabel translasi NAT menampilkan alamat pub
 
 Oleh karena itu, tabel yang tersedia menunjukkan bahwa translasi NAT telah berlangsung untuk beberapa koneksi internal, tetapi belum membuktikan translasi khusus PC CCTV-KOTA. Pengujian perlu diulangi untuk memperoleh bukti translasi yang sesuai.
 
-**[TEMPAT SCREENSHOT 4.3.4]**
+<img width="526" height="497" alt="Bukti Translasi NAT" src="https://github.com/user-attachments/assets/794d8da7-b484-47a3-910e-8fb3154c5959" />
 
 *Gambar 4.3.4 Hasil pemeriksaan tabel translasi NAT pada router R-PUSAT.*
 
-## 4.3.5 Verifikasi Tabel Routing R-ISP
+#### 4.3.5 Verifikasi Tabel Routing R-ISP
 
 Pemeriksaan tabel routing dilakukan untuk memastikan R-ISP memiliki jalur menuju server internet tanpa perlu menambahkan rute khusus menuju jaringan privat Smart City.
 
@@ -424,20 +420,21 @@ Berdasarkan screenshot yang tersedia, R-ISP menampilkan jaringan `8.8.8.0/24` ya
 
 Hasil tersebut sesuai dengan tujuan rancangan NAT/PAT, yaitu menerjemahkan alamat privat menjadi alamat publik pada R-PUSAT sehingga jaringan privat tidak perlu dikenali secara khusus oleh R-ISP.
 
-**[TEMPAT SCREENSHOT 4.3.5]**
+<img width="526" height="497" alt="Bukti R-ISP Tidak Memiliki Rute Privat" src="https://github.com/user-attachments/assets/478f201b-d250-41e8-8a40-803365774b2f" />
 
 *Gambar 4.3.5 Hasil pemeriksaan tabel routing pada router R-ISP.*
 
-## 4.3.6 Kesimpulan Pengujian NAT/PAT
+#### 4.3.6 Kesimpulan Pengujian NAT/PAT
 
 NAT/PAT dikonfigurasi pada R-PUSAT untuk menerjemahkan alamat IP privat jaringan Smart City menjadi satu alamat IP publik, yaitu `203.0.113.33`. Pengujian ping menunjukkan bahwa PC CCTV-KOTA dapat menerima balasan dari server internet `8.8.8.8`, meskipun satu paket mengalami *Request timed out* pada pengujian awal.
 
 Tabel translasi NAT menunjukkan penggunaan alamat publik `203.0.113.33` untuk sejumlah koneksi internal. Selain itu, tabel routing R-ISP yang diperiksa tidak menampilkan rute khusus menuju jaringan privat `10.64.0.0/16`.
 
-Hasil tersebut menunjukkan bahwa mekanisme NAT/PAT telah berjalan untuk beberapa koneksi internal. Pengujian lanjutan diperlukan untuk memastikan translasi pada PC CCTV-KOTA dan memastikan seluruh host internal dapat mengakses server internet sesuai ketentuan soal.
-## 6. Soal 6: Tunnel GRE
+<img width="527" height="504" alt="image" src="https://github.com/user-attachments/assets/494fa364-718a-47ef-9cc4-b95a54b8f89e" />
 
-### 6.1. Tujuan dan Parameter
+### 4.4. Soal 6: Tunnel GRE
+
+#### 4.4.1. Tujuan dan Parameter
 
 Tunnel GRE dibangun antara R-PUSAT dan R-PELABUHAN agar lalu lintas antara subnet Balai Kota dan subnet Pelabuhan melewati tunnel.
 
