@@ -447,7 +447,7 @@ Tunnel GRE dibangun antara R-PUSAT dan R-PELABUHAN agar lalu lintas antara subne
 
 Jalur fisik (underlay) yang dilalui tunnel adalah R-PUSAT, R-UTARA, lalu R-PELABUHAN, melalui link L2 dan L6.
 
-### 6.2. Pengujian Awal Sebelum Tunnel
+#### 4.4.2. Pengujian Awal Sebelum Tunnel
 
 Sebelum tunnel dibuat, konektivitas soal 1 sampai 5 diuji terlebih dahulu. PC CCTV Kota dapat melakukan ping ke PC WiFi Barat dan ke server 8.8.8.8, dan PC Kantor Pelabuhan dapat melakukan ping ke PC CCTV Kota (alamat DHCP 10.64.64.10).
 
@@ -461,7 +461,7 @@ Sebelum tunnel dibuat, konektivitas soal 1 sampai 5 diuji terlebih dahulu. PC CC
 <img width="418" height="191" alt="image" src="https://github.com/user-attachments/assets/ece58cec-08d7-426c-bcbb-b16ef3b5d0b0" />
 
 
-### 6.3. Rute ke Ujung Tunnel (R-PUSAT)
+#### 4.4.3. Rute ke Ujung Tunnel (R-PUSAT)
 
 Agar R-PUSAT dapat menjangkau ujung tunnel di R-PELABUHAN (10.64.241.54), ditambahkan rute ke link L6 melalui R-UTARA.
 
@@ -480,7 +480,7 @@ Rute ini harus tetap ada. Jika dihapus, ujung tunnel tidak terjangkau dan tunnel
 <img width="516" height="123" alt="image" src="https://github.com/user-attachments/assets/6c4dfc23-43ec-45bd-ac1b-931360e762b1" />
 
 
-### 6.4. Konfigurasi Tunnel di R-PUSAT
+#### 4.4.4. Konfigurasi Tunnel di R-PUSAT
 
 ```
 configure terminal
@@ -495,7 +495,7 @@ write memory
 
 Pada versi Packet Tracer yang digunakan, perintah `tunnel source` tidak menerima alamat IP, sehingga ditulis dengan nama interface (Serial0/3/1) yang memiliki IP 10.64.241.37.
 
-### 6.5. Konfigurasi Tunnel di R-PELABUHAN
+#### 4.4.5. Konfigurasi Tunnel di R-PELABUHAN
 
 Source dan destination dibalik dari R-PUSAT.
 
@@ -511,7 +511,7 @@ end
 write memory
 ```
 
-### 6.6. Verifikasi Tunnel
+#### 4.4.6. Verifikasi Tunnel
 
 Perintah di R-PUSAT dan R-PELABUHAN:
 
@@ -554,7 +554,7 @@ ping 192.168.8.1
 <img width="515" height="107" alt="image" src="https://github.com/user-attachments/assets/69b06101-21ce-4c37-be29-bd90235abab3" />
 
 
-### 6.7. Routing Lalu Lintas Melalui Tunnel
+#### 4.4.7. Routing Lalu Lintas Melalui Tunnel
 
 **R-PUSAT:** next-hop lama (R-UTARA, 10.64.241.38) untuk dua LAN Pelabuhan dihapus, lalu diganti ujung tunnel (192.168.8.2).
 
@@ -597,7 +597,7 @@ Default route R-PELABUHAN ke R-UTARA (10.64.241.53) tidak diubah.
 
 <img width="578" height="277" alt="image" src="https://github.com/user-attachments/assets/ebcdb8d2-9fe6-44cf-bae8-35b460d19692" />
 
-### 6.8. Pengujian Lalu Lintas Melalui Tunnel
+#### 4.4.8. Pengujian Lalu Lintas Melalui Tunnel
 
 Dari PC Pegawai Balai Kota (10.64.224.2) menuju PC Kantor Pelabuhan (10.64.240.2):
 
@@ -647,7 +647,7 @@ ping 8.8.8.8
 <img width="451" height="200" alt="image" src="https://github.com/user-attachments/assets/3e78866f-a417-4adb-aac4-7b0f0af0ffb6" />
 
 
-### 6.9. Penjelasan
+#### 4.4.9. Penjelasan
 
 **Mengapa router memilih jalur tunnel dibandingkan jalur lain ke Pelabuhan.**
 Router memilih rute berdasarkan longest prefix match, lalu administrative distance bila prefix sama. Pada R-PUSAT, rute ke LAN Pelabuhan dikonfigurasi dengan next-hop 192.168.8.2, yaitu ujung tunnel, dan rute lama melalui R-UTARA dihapus. Karena satu-satunya rute ke LAN Pelabuhan mengarah ke Tunnel0, router mengirim paket melalui tunnel. Paket dibungkus dengan header IP baru (source 10.64.241.37, destination 10.64.241.54) dan diteruskan melalui jalur fisik R-UTARA. Karena itu, R-UTARA hanya meneruskan paket GRE antara dua ujung tunnel dan tidak muncul sebagai hop pada tracert. Pada R-PELABUHAN, rute ke LAN Balai Kota juga diarahkan ke 192.168.8.1 sehingga arah baliknya melewati tunnel yang sama.
