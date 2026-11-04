@@ -654,3 +654,245 @@ Router memilih rute berdasarkan longest prefix match, lalu administrative distan
 
 **Mengapa GRE saja tidak mengenkripsi data.**
 GRE (Generic Routing Encapsulation) hanya melakukan encapsulation, yaitu membungkus paket asli dengan header IP dan header GRE baru agar dapat dikirim melalui jaringan lain. Isi paket tetap dikirim sebagai plaintext. GRE tidak menyediakan kerahasiaan (data dapat dibaca oleh siapa pun yang menyadap link), autentikasi (penerima tidak memverifikasi pengirim), maupun integritas (isi paket dapat diubah tanpa terdeteksi). Untuk melindungi data di dalam tunnel diperlukan protokol tambahan seperti IPsec.
+### 4.5. Soal 7: Dynamic Routing OSPF
+
+File OSPF dikerjakan terpisah dari file utama (salinan dari file utama setelah soal 6). Tunnel GRE tidak disertakan di file OSPF karena soal 7 hanya meminta OSPF antar-router. Tunnel ada di file utama.
+
+#### 4.5.1. Link Cadangan L7
+
+Link baru L7 menghubungkan R-DC dan R-UTARA melalui interface FastEthernet0/1 di kedua router. Link serial pada kedua router sudah terpakai (R-UTARA tidak memiliki port serial kosong), sedangkan FastEthernet0/1 masih kosong, sehingga dipilih kabel Ethernet (copper cross-over).
+
+| Link | Koneksi | Network ID | Prefix | Endpoint |
+|---|---|---|---|---|
+| L7 | R-DC – R-UTARA | 10.64.241.56 | /30 | DC 10.64.241.57 (Fa0/1), UTARA 10.64.241.58 (Fa0/1) |
+
+Blok 10.64.241.56/30 belum digunakan dan masih berada di dalam blok WAN 10.64.241.32/27, sehingga tidak bentrok dengan link L1 sampai L6.
+
+```
+! R-DC
+interface fastethernet0/1
+ ip address 10.64.241.57 255.255.255.252
+ no shutdown
+
+! R-UTARA
+interface fastethernet0/1
+ ip address 10.64.241.58 255.255.255.252
+ no shutdown
+```
+
+**Screenshot:** R-DC, tab CLI, hasil `ping 10.64.241.58`.
+<img width="647" height="142" alt="image" src="https://github.com/user-attachments/assets/17e546a2-d4d6-4685-98a8-ca47ba49a235" />
+
+#### 4.5.2. Konfigurasi OSPF
+
+Seluruh router menggunakan OSPF proses 1 pada area 0, dengan router-id yang berbeda di setiap router.
+
+| Router | Router-ID | Network yang diumumkan |
+|---|---|---|
+| R-PUSAT | 1.1.1.1 | 10.64.224.0/21, 10.64.241.0/27, 10.64.241.32/27 |
+| R-DC | 2.2.2.2 | 10.64.64.0/19, 10.64.238.0/24, 10.64.241.32/27 |
+| R-UTARA | 3.3.3.3 | 10.64.0.0/18, 10.64.236.0/23, 10.64.241.32/27 |
+| R-BARAT | 4.4.4.4 | 10.64.96.0/19, 10.64.239.0/24, 10.64.241.32/27 |
+| R-TIMUR | 5.5.5.5 | 10.64.160.0/19, 10.64.232.0/22, 10.64.241.32/27 |
+| R-SELATAN | 6.6.6.6 | 10.64.192.0/19, 10.64.240.128/25, 10.64.241.32/27 |
+| R-PELABUHAN | 7.7.7.7 | 10.64.128.0/19, 10.64.240.0/25, 10.64.241.32/27 |
+
+Blok 10.64.241.32/27 mencakup seluruh link backbone L1 sampai L7 sehingga cukup satu pernyataan `network` untuk semua link.
+
+Contoh konfigurasi pada R-DC:
+
+```
+router ospf 1
+ router-id 2.2.2.2
+ passive-interface default
+ no passive-interface serial0/3/0
+ no passive-interface fastethernet0/1
+ network 10.64.64.0 0.0.31.255 area 0
+ network 10.64.238.0 0.0.0.255 area 0
+ network 10.64.241.32 0.0.0.31 area 0
+```
+
+Router lain memakai pola yang sama dengan interface link dan network masing-masing.
+
+**Router tidak mengirim pesan OSPF ke LAN pengguna.** Perintah `passive-interface default` menonaktifkan pengiriman pesan OSPF pada semua interface, lalu `no passive-interface` hanya dibuka pada interface link antar-router. Subinterface LAN (misalnya FastEthernet0/0.10 dan FastEthernet0/0.20) tetap passive. Link R-PUSAT ke R-ISP juga tidak diumumkan dan tetap passive, sehingga OSPF tidak bocor ke ISP.
+
+**Screenshot:** R-DC, tab CLI, hasil `show ip protocols` (daftar Passive Interface memuat subinterface LAN).
+<img width="652" height="386" alt="image" src="https://github.com/user-attachments/assets/b1859df0-0858-4016-9db6-7cb174ca4612" />
+
+
+
+#### 4.5.3. Default Route Hanya di R-PUSAT
+
+Default route ke internet hanya dikonfigurasi statis di R-PUSAT, lalu disebarkan ke seluruh router lewat OSPF.
+
+```
+! R-PUSAT
+ip route 0.0.0.0 0.0.0.0 203.0.113.34
+router ospf 1
+ default-information originate
+```
+
+Router lain menerimanya sebagai rute `O*E2 0.0.0.0/0`. Seluruh default route static pada router lain dihapus.
+
+#### 4.5.4. Penghapusan Static Route
+
+Seluruh static route antar-router dihapus, termasuk rute ke LAN Pelabuhan di R-UTARA dan R-PUSAT. Tunnel GRE beserta rutenya (192.168.8.0/30) juga dihapus pada file OSPF. Satu-satunya rute static yang tersisa adalah default route R-PUSAT ke R-ISP (203.0.113.34).
+
+Pengecekan: pada `show ip route`, R-PUSAT hanya memiliki satu rute `S` (default route ke ISP), dan router lain tidak memiliki rute `S` sama sekali.
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show ip route` (satu rute S, sisanya O dan C).
+<img width="627" height="571" alt="image" src="https://github.com/user-attachments/assets/3deabb73-788e-47a0-83fe-969cd2b3c406" />
+
+
+**Screenshot:** R-DC, tab CLI, hasil `show ip route` (rute O dan default O*E2 via 10.64.241.33).
+
+<img width="797" height="517" alt="image" src="https://github.com/user-attachments/assets/0da3953a-cb88-4809-afad-3b66833e4f72" />
+
+
+**Screenshot:** R-PELABUHAN, tab CLI, hasil `show ip route` (rute O dan default O*E2, tanpa rute S).
+<img width="670" height="522" alt="image" src="https://github.com/user-attachments/assets/973aed11-b6b2-430c-97aa-fa60c5e517d6" />
+
+
+#### 4.5.5. Link L7 sebagai Jalur Cadangan
+
+Link serial memiliki cost OSPF 64 per link, sedangkan FastEthernet memiliki cost 1. Tanpa pengaturan, L7 akan menjadi jalur utama antara R-DC dan R-UTARA. Agar L7 hanya berfungsi sebagai cadangan, cost L7 dinaikkan menjadi 200 di kedua ujung.
+
+```
+! R-DC dan R-UTARA
+interface fastethernet0/1
+ ip ospf cost 200
+```
+
+Dengan pengaturan ini, jalur R-DC ke R-UTARA lewat R-PUSAT (2 link serial, cost 128) lebih murah daripada L7 (cost 200), sehingga L7 baru dipakai ketika jalur lain terputus. Hal ini terlihat pada tabel routing R-DC: rute ke LAN R-UTARA (10.64.0.0/18) melalui 10.64.241.33 (R-PUSAT) dengan cost 129, bukan melalui L7.
+
+#### 4.5.6. Verifikasi OSPF
+
+Setiap router memiliki neighbor dengan status FULL:
+
+| Router | Jumlah neighbor | Neighbor |
+|---|---|---|
+| R-PUSAT | 5 | R-DC, R-UTARA, R-SELATAN, R-TIMUR, R-BARAT |
+| R-DC | 2 | R-PUSAT, R-UTARA (lewat L7) |
+| R-UTARA | 3 | R-PUSAT, R-PELABUHAN, R-DC (lewat L7) |
+| R-BARAT, R-TIMUR, R-SELATAN | 1 | R-PUSAT |
+| R-PELABUHAN | 1 | R-UTARA |
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show ip ospf neighbor` (5 neighbor FULL).
+
+<img width="655" height="165" alt="image" src="https://github.com/user-attachments/assets/92a50fd7-3f47-48bb-ba5a-0cbbf8f2096b" />
+
+
+**Screenshot:** R-UTARA, tab CLI, hasil `show ip ospf neighbor` (3 neighbor FULL).
+
+<img width="660" height="158" alt="image" src="https://github.com/user-attachments/assets/ac24d6d2-c2a7-462a-a707-ceaf9e2217e7" />
+
+
+**Screenshot:** R-DC, tab CLI, hasil `show ip ospf neighbor` (2 neighbor FULL).
+
+<img width="653" height="126" alt="image" src="https://github.com/user-attachments/assets/12a00825-d1f1-4f8b-8b34-bf2295e7487c" />
+
+
+#### 4.5.7. Pengujian Konektivitas dan Internet
+
+Seluruh LAN tetap dapat saling berkomunikasi, dan akses ke 8.8.8.8 tetap berjalan melalui NAT di R-PUSAT. Pada `show ip nat translations`, alamat privat host diterjemahkan menjadi satu IP publik R-PUSAT (203.0.113.33). Pada R-ISP, `show ip route` tidak memuat rute ke jaringan 10.64.x.x.
+
+**Screenshot:** PC CCTV Kota dan PC Kantor Pelabuhan, Desktop, Command Prompt, hasil ping antar-LAN dan ke 8.8.8.8 (ping kedua 0% loss).
+<img width="708" height="336" alt="Screenshot 2026-11-04 110705" src="https://github.com/user-attachments/assets/1661fbc4-ba93-4335-89b1-e45b1c4cac31" />
+<img width="700" height="332" alt="Screenshot 2026-11-04 110720" src="https://github.com/user-attachments/assets/bae46364-29ae-41d3-a6eb-a2109b250f6a" />
+<img width="693" height="332" alt="Screenshot 2026-11-04 110752" src="https://github.com/user-attachments/assets/206aaed3-b800-4169-86f9-1479ab24f47d" />
+
+**Screenshot:** R-PUSAT, tab CLI, hasil `show ip nat translations`.
+
+<img width="626" height="102" alt="image" src="https://github.com/user-attachments/assets/9f708378-5408-461b-974c-2bd3dcbbaac5" />
+
+
+**Screenshot:** R-ISP, tab CLI, hasil `show ip route` (tanpa rute 10.64.x.x).
+
+<img width="615" height="260" alt="image" src="https://github.com/user-attachments/assets/cb2735f7-8b8e-4c61-8d09-6d108a9a2097" />
+
+#### 4.5.8. Pengujian Failover
+
+Pengujian dilakukan dengan mematikan satu link backbone, lalu mengamati apakah koneksi pulih otomatis melalui jalur lain.
+
+**Pengujian 1: link L1 (R-DC ke R-PUSAT) diputus.**
+
+Sebelum link diputus, jalur dari PC CCTV ke 8.8.8.8 adalah:
+
+1. 10.64.64.1 (gateway CCTV)
+2. 10.64.241.33 (R-PUSAT, lewat L1)
+3. 203.0.113.34 (R-ISP)
+4. 8.8.8.8
+
+**Screenshot:** PC CCTV Kota, Command Prompt, hasil `tracert 8.8.8.8` sebelum link diputus.
+
+<img width="431" height="157" alt="image" src="https://github.com/user-attachments/assets/109bf67b-6c00-4bf4-a06f-8f7a4fd2152d" />
+
+
+Link L1 dimatikan di R-DC:
+
+```
+interface serial0/3/0
+ shutdown
+```
+
+Ping ke 8.8.8.8 sempat mengalami timeout, lalu pulih secara otomatis dalam waktu singkat.
+
+**Screenshot:** PC CCTV Kota, Command Prompt, hasil `ping -t 8.8.8.8` (timeout lalu pulih).
+
+<img width="1917" height="1078" alt="image" src="https://github.com/user-attachments/assets/ac57d605-62fa-4aa2-baac-98aadd74cda5" />
+
+
+Setelah link diputus, jalur berpindah ke L7:
+
+1. 10.64.64.1 (gateway CCTV)
+2. 10.64.241.58 (R-UTARA, lewat L7)
+3. 10.64.241.37 (R-PUSAT, lewat L2)
+4. 203.0.113.34 (R-ISP)
+5. 8.8.8.8
+
+**Screenshot:** PC CCTV Kota, Command Prompt, hasil `tracert 8.8.8.8` setelah link diputus.
+
+<img width="431" height="157" alt="image" src="https://github.com/user-attachments/assets/d8910f44-8c66-4dc4-9657-ff6d40425b1b" />
+
+
+Link kemudian dinyalakan kembali (`no shutdown`), dan jalur kembali melalui 10.64.241.33.
+
+**Pengujian 2: link L2 (R-PUSAT ke R-UTARA) diputus.**
+
+Sebelum link diputus, jalur dari PC Kantor Pelabuhan ke 8.8.8.8 adalah:
+
+1. 10.64.240.1 (gateway Pelabuhan)
+2. 10.64.241.53 (R-UTARA)
+3. 10.64.241.37 (R-PUSAT, lewat L2)
+4. 203.0.113.34 (R-ISP)
+5. 8.8.8.8
+
+**Screenshot:** PC Kantor Pelabuhan, Command Prompt, hasil `tracert 8.8.8.8` sebelum link diputus.
+
+<img width="440" height="213" alt="image" src="https://github.com/user-attachments/assets/5aa5778e-d447-4571-86b7-6ad1a873ac70" />
+
+
+Link L2 dimatikan di R-PUSAT:
+
+```
+interface serial0/3/1
+ shutdown
+```
+
+**Screenshot:** PC Kantor Pelabuhan, Command Prompt, hasil `ping -t 8.8.8.8` (timeout lalu pulih).
+
+<img width="1917" height="1055" alt="image" src="https://github.com/user-attachments/assets/51d0753c-032f-470f-b4f9-cc0bae5a7ce4" />
+
+
+Setelah link diputus, jalur dari Pelabuhan berputar melalui R-UTARA, R-DC (lewat L7), lalu R-PUSAT (lewat L1).
+
+**Screenshot:** PC Kantor Pelabuhan, Command Prompt, hasil `tracert 8.8.8.8` setelah link diputus.
+
+<img width="412" height="212" alt="image" src="https://github.com/user-attachments/assets/e61f9c8a-9eec-4fc5-916e-4f798dd06029" />
+
+
+Link kemudian dinyalakan kembali (`no shutdown`).
+
+Kedua pengujian menunjukkan bahwa konektivitas pulih otomatis melalui jalur lain tanpa perubahan konfigurasi manual.
+
+
