@@ -363,7 +363,7 @@ Langkah-langkah pengujian adalah sebagai berikut.
 
 Berdasarkan screenshot pengujian yang tersedia, PC CCTV-KOTA mengirimkan empat paket dan menerima tiga balasan, sedangkan satu paket mengalami *Request timed out*. Hasil ini menunjukkan bahwa konektivitas menuju server internet telah berhasil, tetapi masih terdapat kehilangan satu paket pada pengujian awal.
 
-
+<img width="510" height="164" alt="image" src="https://github.com/user-attachments/assets/ae1e9dc6-fbdb-4e48-ba9a-acbdbbe2546b" />
 
 *Gambar 4.3.3 Hasil pengujian ping dari PC CCTV-KOTA menuju server internet `8.8.8.8`.*
 
