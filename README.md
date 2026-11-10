@@ -145,8 +145,309 @@ Tunnel GRE membentuk jalur logis antara kedua router melalui jaringan underlay y
 
 GRE tidak menyediakan enkripsi secara bawaan. Jika diperlukan, enkripsi dapat ditambahkan menggunakan IPsec.
 
-##4.
-###4.1
+# Konfigurasi
+
+### 4.1. Konfigurasi Static Routing (Soal Nomor 3)
+
+Static Routing merupakan metode routing yang memungkinkan router menentukan jalur pengiriman paket secara manual menuju jaringan tujuan. Pada jaringan Smart City Kota Surabaya, Static Routing digunakan agar seluruh LAN yang berada di belakang router berbeda dapat saling berkomunikasi.
+
+Konfigurasi dilakukan dengan menentukan destination network, subnet mask, dan next-hop address pada masing-masing router.
+
+#### 4.1.1. Tujuan Static Routing
+
+Konfigurasi Static Routing bertujuan untuk:
+
+1. Menghubungkan seluruh jaringan LAN yang berada di wilayah berbeda.
+2. Menentukan jalur pengiriman paket melalui router yang sesuai.
+3. Memastikan komunikasi antara jaringan pusat, wilayah regional, dan Pelabuhan berjalan dengan baik.
+4. Mengarahkan paket menuju jaringan eksternal melalui router ISP menggunakan default route.
+
+Perintah dasar Static Routing pada Cisco IOS adalah:
+
+```text
+ip route <destination-network> <subnet-mask> <next-hop-ip>
+```
+
+#### 4.1.2. Konfigurasi Static Routing pada R-PUSAT
+
+R-PUSAT berfungsi sebagai router utama yang menghubungkan seluruh jaringan regional. Oleh karena itu, R-PUSAT menggunakan specific static route untuk menentukan jalur menuju setiap LAN yang berada di belakang router regional.
+
+Berikut konfigurasi static route pada R-PUSAT.
+
+**A. Rute menuju R-DC**
+
+```text
+ip route 10.64.64.0 255.255.224.0 10.64.241.34
+ip route 10.64.238.0 255.255.255.0 10.64.241.34
+```
+
+Kedua jaringan tersebut berada di belakang R-DC sehingga menggunakan next-hop yang sama, yaitu `10.64.241.34`.
+
+**B. Rute menuju R-UTARA**
+
+```text
+ip route 10.64.0.0 255.255.192.0 10.64.241.38
+ip route 10.64.236.0 255.255.254.0 10.64.241.38
+```
+
+**C. Rute menuju R-SELATAN**
+
+```text
+ip route 10.64.192.0 255.255.224.0 10.64.241.42
+ip route 10.64.240.128 255.255.255.128 10.64.241.42
+```
+
+**D. Rute menuju R-TIMUR**
+
+```text
+ip route 10.64.160.0 255.255.224.0 10.64.241.46
+ip route 10.64.232.0 255.255.252.0 10.64.241.46
+```
+
+**E. Rute menuju R-BARAT**
+
+```text
+ip route 10.64.96.0 255.255.224.0 10.64.241.50
+ip route 10.64.239.0 255.255.255.0 10.64.241.50
+```
+
+**F. Rute menuju R-PELABUHAN**
+
+```text
+ip route 10.64.128.0 255.255.224.0 10.64.241.38
+ip route 10.64.240.0 255.255.255.128 10.64.241.38
+```
+
+R-PELABUHAN tidak terhubung langsung dengan R-PUSAT. Paket menuju jaringan Pelabuhan harus melewati R-UTARA terlebih dahulu. Oleh karena itu, kedua rute tersebut menggunakan next-hop `10.64.241.38`, yaitu alamat interface R-UTARA pada link L2.
+
+**G. Default Route menuju ISP**
+
+```text
+ip route 0.0.0.0 0.0.0.0 203.0.113.34
+```
+
+Default route digunakan untuk meneruskan paket menuju jaringan yang tidak memiliki rute lebih spesifik ke R-ISP melalui alamat `203.0.113.34`.
+
+#### 4.1.3. Konfigurasi Static Routing pada Router Regional
+
+Router regional menggunakan default route untuk meneruskan paket menuju jaringan lain melalui router upstream, yaitu R-PUSAT.
+
+Berikut konfigurasi pada masing-masing router.
+
+**A. R-DC**
+
+```text
+ip route 0.0.0.0 0.0.0.0 10.64.241.33
+```
+
+**B. R-BARAT**
+
+```text
+ip route 0.0.0.0 0.0.0.0 10.64.241.49
+```
+
+**C. R-SELATAN**
+
+```text
+ip route 0.0.0.0 0.0.0.0 10.64.241.41
+```
+
+**D. R-TIMUR**
+
+```text
+ip route 0.0.0.0 0.0.0.0 10.64.241.45
+```
+
+**E. R-PELABUHAN**
+
+```text
+ip route 0.0.0.0 0.0.0.0 10.64.241.53
+```
+
+Default route pada router regional mengarahkan paket menuju R-PUSAT atau router upstream yang menjadi jalur utama menuju jaringan lainnya.
+
+#### 4.1.4. Konfigurasi Khusus R-UTARA
+
+R-UTARA memiliki konfigurasi khusus karena berfungsi sebagai penghubung antara R-PUSAT dan R-PELABUHAN.
+
+Selain menggunakan default route menuju R-PUSAT, R-UTARA membutuhkan specific static route menuju kedua LAN Pelabuhan melalui R-PELABUHAN.
+
+Konfigurasi pada R-UTARA adalah sebagai berikut.
+
+```text
+ip route 10.64.128.0 255.255.224.0 10.64.241.54
+ip route 10.64.240.0 255.255.255.128 10.64.241.54
+ip route 0.0.0.0 0.0.0.0 10.64.241.37
+```
+
+Keterangan:
+
+- `10.64.128.0/19` merupakan jaringan Sensor dan SCADA Pelabuhan.
+- `10.64.240.0/25` merupakan jaringan Kantor Pelabuhan.
+- `10.64.241.54` merupakan alamat interface R-PELABUHAN pada link L6.
+- `10.64.241.37` merupakan alamat interface R-PUSAT pada link L2.
+
+Dengan konfigurasi tersebut, paket menuju jaringan Pelabuhan diteruskan melalui R-PELABUHAN, sedangkan paket menuju jaringan lainnya diteruskan melalui R-PUSAT.
+
+#### 4.1.5. Ringkasan Next-Hop Static Routing
+
+Berikut ringkasan jalur yang digunakan dalam konfigurasi Static Routing.
+
+| Router | Jaringan Tujuan | Next-Hop |
+|---|---|---|
+| R-PUSAT | LAN R-DC | `10.64.241.34` |
+| R-PUSAT | LAN R-UTARA | `10.64.241.38` |
+| R-PUSAT | LAN R-SELATAN | `10.64.241.42` |
+| R-PUSAT | LAN R-TIMUR | `10.64.241.46` |
+| R-PUSAT | LAN R-BARAT | `10.64.241.50` |
+| R-PUSAT | LAN R-PELABUHAN | `10.64.241.38` |
+| R-PUSAT | Default Route | `203.0.113.34` |
+| R-DC | Default Route | `10.64.241.33` |
+| R-UTARA | LAN R-PELABUHAN | `10.64.241.54` |
+| R-UTARA | Default Route | `10.64.241.37` |
+| R-BARAT | Default Route | `10.64.241.49` |
+| R-SELATAN | Default Route | `10.64.241.41` |
+| R-TIMUR | Default Route | `10.64.241.45` |
+| R-PELABUHAN | Default Route | `10.64.241.53` |
+
+#### 4.1.6. Verifikasi Konfigurasi Static Routing
+
+Setelah konfigurasi selesai, dilakukan pemeriksaan untuk memastikan seluruh static route telah terpasang dengan benar.
+
+**A. Memeriksa Status Interface**
+
+Pada setiap router, jalankan perintah:
+
+```text
+show ip interface brief
+```
+
+Perintah ini digunakan untuk memeriksa status interface dan memastikan koneksi yang digunakan berada dalam kondisi `up/up`.
+
+**B. Memeriksa Routing Table**
+
+Jalankan perintah:
+
+```text
+show ip route
+```
+
+Perhatikan kode berikut pada tabel routing:
+
+| Kode | Keterangan |
+|---|---|
+| C | Connected Route |
+| L | Local Route |
+| S | Static Route |
+| S* | Default Static Route |
+
+Pada R-PUSAT, diharapkan terlihat rute statis menuju seluruh jaringan regional dan default route menuju ISP.
+
+Pada router regional, diharapkan terlihat default route menuju router upstream. Khusus R-UTARA, terdapat tambahan dua specific static route menuju jaringan Pelabuhan.
+
+**C. Memeriksa Konfigurasi Static Route**
+
+Jalankan perintah:
+
+```text
+show running-config | include ^ip route
+```
+
+Perintah ini menampilkan seluruh perintah static route yang telah dikonfigurasi pada router.
+
+#### 4.1.7. Pengujian Konektivitas Antar-LAN
+
+Pengujian dilakukan menggunakan perintah `ping` dari perangkat PC untuk memastikan komunikasi antara jaringan yang berada di belakang router berbeda.
+
+Pengujian menggunakan empat skenario berikut.
+
+**A. Pengujian CCTV Kota menuju WiFi Publik Barat**
+
+Perangkat sumber: PC CCTV Kota.
+
+```text
+ping 10.64.96.2
+```
+![alt text](Assets/ujino3.1.png)
+| Parameter | Alamat |
+|---|---|
+| IP Sumber | `10.64.64.2` |
+| Default Gateway | `10.64.64.1` |
+| IP Tujuan | `10.64.96.2` |
+
+Jalur komunikasi:
+
+```text
+PC CCTV Kota → R-DC → R-PUSAT → R-BARAT → PC WiFi Publik Barat
+```
+
+Pengujian ini memastikan komunikasi antara jaringan Data Center dan jaringan wilayah Barat.
+
+**B. Pengujian WiFi Publik Utara menuju WiFi Publik Timur**
+
+Perangkat sumber: PC WiFi Publik Utara.
+
+```text
+ping 10.64.160.2
+```
+![alt text](Assets/ujino3.2.png)
+| Parameter | Alamat |
+|---|---|
+| IP Sumber | `10.64.0.2` |
+| Default Gateway | `10.64.0.1` |
+| IP Tujuan | `10.64.160.2` |
+
+Jalur komunikasi:
+
+```text
+PC WiFi Utara → R-UTARA → R-PUSAT → R-TIMUR → PC WiFi Timur
+```
+
+Pengujian ini memastikan komunikasi antardaerah melalui router pusat.
+
+**C. Pengujian WiFi Publik Barat menuju Sensor dan SCADA Pelabuhan**
+
+Perangkat sumber: PC WiFi Publik Barat.
+
+```text
+ping 10.64.128.2
+```
+![alt text](Assets/ujino3.3.png)
+| Parameter | Alamat |
+|---|---|
+| IP Sumber | `10.64.96.2` |
+| Default Gateway | `10.64.96.1` |
+| IP Tujuan | `10.64.128.2` |
+
+Jalur komunikasi:
+
+```text
+PC WiFi Barat → R-BARAT → R-PUSAT → R-UTARA → R-PELABUHAN → PC Sensor dan SCADA
+```
+
+Pengujian ini memastikan paket dapat melewati beberapa router, termasuk jalur tambahan dari R-UTARA menuju R-PELABUHAN.
+
+**D. Pengujian Kantor Pelabuhan menuju CCTV Kota**
+
+Perangkat sumber: PC Kantor Pelabuhan.
+
+```text
+ping 10.64.64.2
+```
+![alt text](Assets/ujino3.4.png)
+| Parameter | Alamat |
+|---|---|
+| IP Sumber | `10.64.240.2` |
+| Default Gateway | `10.64.240.1` |
+| IP Tujuan | `10.64.64.2` |
+
+Jalur komunikasi:
+
+```text
+PC Kantor Pelabuhan → R-PELABUHAN → R-UTARA → R-PUSAT → R-DC → PC CCTV Kota
+```
+
+Pengujian ini memastikan komunikasi dari jaringan Pelabuhan menuju jaringan Data Center.
 
 ### 4.2 Konfigurasi DHCP pada Jaringan Smart City
 
