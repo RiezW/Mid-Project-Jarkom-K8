@@ -1195,5 +1195,193 @@ Setelah link diputus, jalur dari Pelabuhan berputar melalui R-UTARA, R-DC (lewat
 Link kemudian dinyalakan kembali (`no shutdown`).
 
 Kedua pengujian menunjukkan bahwa konektivitas pulih otomatis melalui jalur lain tanpa perubahan konfigurasi manual.
+### 4.6. Soal 8: Layanan Aplikasi Smart City
+
+Layanan aplikasi memakai domain internal `k8.smartcity.lab`. Seluruh layanan dikonfigurasi pada file utama.
+
+#### 4.6.1. Rancangan Layanan
+
+| Layanan | Server | IP | Nama domain |
+|---|---|---|---|
+| DNS | Server dan Storage DC | 10.64.238.2 | - |
+| FTP | Server dan Storage DC | 10.64.238.2 | ftp.k8.smartcity.lab |
+| Email (SMTP dan POP3) | Server dan Storage DC | 10.64.238.2 | mail.k8.smartcity.lab |
+| Web | Server Balai Kota | 10.64.241.2 | www.k8.smartcity.lab |
+
+DNS, FTP, dan email ditempatkan pada satu server di LAN Server dan Storage DC karena ketiganya merupakan layanan pendukung pusat data, sedangkan web ditempatkan di LAN Server Balai Kota sesuai ketentuan soal. Soal tidak menyebut lokasi server email, sehingga email ditempatkan di server pusat data yang sama.
+
+#### 4.6.2. Pengalamatan Server dan Pengaturan DNS pada Klien
+
+Server Balai Kota diberi IP statis sebagai berikut.
+
+| Parameter | Nilai |
+|---|---|
+| IP Address | 10.64.241.2 |
+| Subnet Mask | 255.255.255.224 |
+| Default Gateway | 10.64.241.1 |
+| DNS Server | 10.64.238.2 |
+
+Pada Server dan Storage DC, DNS Server diubah dari 8.8.8.8 menjadi 10.64.238.2 (alamat server DNS itu sendiri).
+
+Pada pool DHCP CCTV-KOTA, DNS Server juga diubah menjadi 10.64.238.2 agar perangkat CCTV menggunakan DNS internal. PC pada LAN lain diisi DNS Server 10.64.238.2 pada IP Configuration.
+
+#### 4.6.3. DNS (Soal 8a)
+
+DNS diaktifkan pada Server dan Storage DC (Services, DNS, DNS Service On), lalu ditambahkan tiga record tipe A.
+
+| Name | Type | Address |
+|---|---|---|
+| www.k8.smartcity.lab | A Record | 10.64.241.2 |
+| ftp.k8.smartcity.lab | A Record | 10.64.238.2 |
+| mail.k8.smartcity.lab | A Record | 10.64.238.2 |
+
+<img width="505" height="290" alt="image" src="https://github.com/user-attachments/assets/4ac2d218-683d-477b-bc91-eb331e076a4a" />
+
+Pengujian dari berbagai wilayah menggunakan Command Prompt:
+
+```
+nslookup www.k8.smartcity.lab
+nslookup ftp.k8.smartcity.lab
+nslookup mail.k8.smartcity.lab
+```
+
+Ketiga nama berhasil diterjemahkan dari seluruh wilayah yang diuji. Keterangan "Non-authoritative answer" pada hasil nslookup merupakan perilaku normal di Cisco Packet Tracer.
+
+**Screenshot:** PC Pegawai Balai Kota, Command Prompt, hasil `nslookup` ketiga nama.
+
+<img width="697" height="706" alt="image" src="https://github.com/user-attachments/assets/3719c5c2-34aa-4cf9-ba50-d5cce1d52b2b" />
+
+
+**Screenshot:** PC CCTV Kota, Command Prompt, hasil `nslookup` ketiga nama.
+
+<img width="699" height="547" alt="image" src="https://github.com/user-attachments/assets/f89c31cc-f464-4ad1-a2bc-d81a1f32d64d" />
+
+**Screenshot:** PC Kantor Pelabuhan, Command Prompt, hasil `nslookup` ketiga nama.
+
+<img width="700" height="521" alt="image" src="https://github.com/user-attachments/assets/e1b448b7-bf43-4bbe-af1e-752dbd90759e" />
+
+**Screenshot:** PC WiFi Publik Selatan, Command Prompt, hasil `nslookup` ketiga nama.
+<img width="709" height="703" alt="image" src="https://github.com/user-attachments/assets/8ecbfefa-1dba-4363-b810-c03ed2abd795" />
+
+
+#### 4.6.4. Web (Soal 8b)
+
+Layanan HTTP diaktifkan pada Server Balai Kota (Services, HTTP, HTTP dan HTTPS On). File `index.html` diganti dengan halaman "Portal Smart City Surabaya" yang mencantumkan nomor kelompok:
+
+```html
+<html>
+<head><title>Portal Smart City Surabaya</title></head>
+<body>
+<h1>Portal Smart City Surabaya</h1>
+<p>Kelompok 8</p>
+<p>Domain: www.k8.smartcity.lab</p>
+</body>
+</html>
+```
+
+**Screenshot:** Server Balai Kota, Services, HTTP (HTTP On, isi `index.html` setelah diedit).
+
+<img width="696" height="449" alt="image" src="https://github.com/user-attachments/assets/ab6481d7-89eb-4700-99d8-ee448576f831" />
+
+
+Halaman dibuka dari Web Browser pada PC di berbagai wilayah dengan mengetik `www.k8.smartcity.lab`.
+
+**Screenshot:** PC Pegawai Balai Kota, Desktop, Web Browser (URL dan halaman portal terlihat).
+
+<img width="699" height="696" alt="image" src="https://github.com/user-attachments/assets/012d4685-8b4f-420c-a086-3da185908d7b" />
+
+
+**Screenshot:** PC CCTV Kota, Desktop, Web Browser.
+<img width="695" height="689" alt="image" src="https://github.com/user-attachments/assets/96709233-2c4f-4aef-a8bd-5704ca485d04" />
+
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Web Browser.
+<img width="701" height="427" alt="image" src="https://github.com/user-attachments/assets/bda8833b-c9bf-4601-a216-420851250ac9" />
+
+
+**Screenshot:** PC WiFi Publik Selatan, Desktop, Web Browser.
+<img width="701" height="433" alt="image" src="https://github.com/user-attachments/assets/3fbd7571-349b-495a-8e94-2660f5666db1" />
+
+
+#### 4.6.5. FTP untuk Rekaman CCTV (Soal 8c)
+
+FTP diaktifkan pada Server dan Storage DC (Services, FTP, Service On) dengan akun login sebagai berikut.
+
+| Username | Password | Permission |
+|---|---|---|
+| cctv | cctv123 | Write, Read, Delete, Rename, List |
+
+Akun bawaan `cisco` dihapus sehingga hanya akun `cctv` yang dapat login.
+
+Pengujian dilakukan dari PC CCTV Kota. File `rekaman1.txt` dibuat dengan Text Editor, lalu diunggah:
+
+```
+ftp ftp.k8.smartcity.lab
+(username: cctv, password: cctv123)
+put rekaman1.txt
+dir
+quit
+```
+
+**Screenshot:** PC CCTV Kota, Command Prompt (login berhasil, `put rekaman1.txt`, dan `dir` menampilkan file).
+<img width="1919" height="1078" alt="image" src="https://github.com/user-attachments/assets/cdad3a4c-226f-4111-98cc-6a9bae95ac1b" />
+
+
+**Screenshot:** Server dan Storage DC, Services, FTP (`rekaman1.txt` ada pada daftar file server).
+
+<img width="698" height="700" alt="image" src="https://github.com/user-attachments/assets/a61fdea4-21c4-4816-a758-bc5f37c96085" />
+
+Hasil ini membuktikan perangkat di LAN CCTV Kota (yang mendapat IP dari DHCP server DC) dapat mengunggah file ke penyimpanan FTP di LAN Server dan Storage DC menggunakan nama domain.
+
+#### 4.6.6. Email Antarpegawai (Soal 8d)
+
+Layanan email (SMTP dan POP3) diaktifkan pada Server dan Storage DC (Services, EMAIL). Domain diatur menjadi `k8.smartcity.lab`, lalu dibuat dua akun.
+
+| User | Password | Alamat email | Digunakan oleh |
+|---|---|---|---|
+| pegawai1 | pass123 | pegawai1@k8.smartcity.lab | PC Pegawai Balai Kota |
+| pelabuhan1 | pass123 | pelabuhan1@k8.smartcity.lab | PC Kantor Pelabuhan |
+
+**Screenshot:** Server dan Storage DC, Services, EMAIL (domain dan dua akun terlihat).
+<img width="699" height="617" alt="image" src="https://github.com/user-attachments/assets/1b7ae770-c9d5-42dd-a61f-1619c8c32af2" />
+
+
+Pada kedua PC, aplikasi Email dikonfigurasi dengan Incoming dan Outgoing Mail Server `mail.k8.smartcity.lab`, serta User Name berupa nama akun (bukan alamat lengkap).
+
+**Screenshot:** PC Pegawai Balai Kota, Desktop, Email, Configure Mail.
+
+<img width="702" height="710" alt="image" src="https://github.com/user-attachments/assets/46d047f7-cb66-4aab-a6fb-41e72b20f659" />
+
+
+**Screenshot:** PC Kantor Pelabuhan, Desktop, Email, Configure Mail.
+
+<img width="701" height="465" alt="image" src="https://github.com/user-attachments/assets/1cb4f748-4368-4e25-bbdd-e620a3abd5cf" />
+
+
+Pengujian dilakukan dua arah. Pertama, dari Balai Kota ke Pelabuhan.
+
+**Screenshot:** PC Kantor Pelabuhan, setelah Receive, email dari `pegawai1` masuk.
+
+<img width="701" height="505" alt="image" src="https://github.com/user-attachments/assets/c4b1d4c9-aad8-4f44-86b5-75b9e8ad7ef9" />
+
+Kedua, dari Pelabuhan ke Balai Kota.
+
+**Screenshot:** PC Pegawai Balai Kota, setelah Receive, email dari `pelabuhan1` masuk.
+
+<img width="700" height="519" alt="image" src="https://github.com/user-attachments/assets/8658087f-03d9-4632-a2b4-89173d07b18a" />
+
+
+#### 4.6.7. Alur Kerja Layanan
+
+1. Klien meminta alamat nama domain (misalnya `www.k8.smartcity.lab`) ke DNS server 10.64.238.2.
+2. DNS server menjawab dengan alamat IP sesuai record A.
+3. Klien menghubungi server tujuan (web 10.64.241.2, FTP atau email 10.64.238.2) melalui jaringan yang sudah dikonfigurasi pada soal 3 dan 5.
+
+Jadi seluruh layanan bergantung pada routing yang sudah berfungsi serta DNS yang dibagikan ke semua klien.
+
+#### 4.6.8. Catatan
+
+- DNS Server pada pool DHCP dan pada server diubah dari 8.8.8.8 menjadi 10.64.238.2 agar nama domain internal dapat diterjemahkan.
+- Server email ditempatkan pada Server dan Storage DC karena soal tidak menyebut lokasinya.
+- Layanan dikonfigurasi pada file utama. File OSPF (soal 7) tidak memuat layanan ini kecuali dinyatakan lain.
 
 
